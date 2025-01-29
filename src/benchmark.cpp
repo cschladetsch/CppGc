@@ -1,11 +1,12 @@
+// benchmark.cpp - Updated for spdlog logging
 #include <iostream>
 #include <vector>
 #include <memory>
 #include <chrono>
 #include "GC.hpp"
 #include "MyObject.hpp"
+#include "spdlog/spdlog.h"
 
-// Timer Utility
 class Timer {
 public:
     std::chrono::high_resolution_clock::time_point start_time;
@@ -16,19 +17,21 @@ public:
     }
 };
 
-// Benchmark Shared Pointer
 double shared_ptr_test(size_t num_objects) {
+    spdlog::info("Running std::shared_ptr benchmark...");
     Timer t;
     {
         std::vector<std::shared_ptr<MyObject>> objects;
         for (size_t i = 0; i < num_objects; ++i)
             objects.push_back(std::make_shared<MyObject>(i));
     }
-    return t.elapsed();
+    double time = t.elapsed();
+    spdlog::info("std::shared_ptr completed in {} ms", time);
+    return time;
 }
 
-// Benchmark CppGc
 double gc_test(size_t num_objects) {
+    spdlog::info("Running CppGc benchmark...");
     Timer t;
     {
         std::vector<MyObject*> objects;
@@ -40,7 +43,9 @@ double gc_test(size_t num_objects) {
         for (auto* obj : objects) obj->release_ref();
         GC::collect();
     }
-    return t.elapsed();
+    double time = t.elapsed();
+    spdlog::info("CppGc completed in {} ms", time);
+    return time;
 }
 
 int main() {
@@ -48,10 +53,9 @@ int main() {
     double shared_time = shared_ptr_test(num_objects);
     double gc_time = gc_test(num_objects);
 
-    std::cout << "=== Benchmark Results ===\n";
-    std::cout << "std::shared_ptr: " << shared_time << " ms\n";
-    std::cout << "CppGc: " << gc_time << " ms\n";
-    std::cout << "CppGc is " << (shared_time / gc_time) << "x faster/slower\n";
-
+    spdlog::info("\n=== Benchmark Results ===");
+    spdlog::info("std::shared_ptr: {} ms", shared_time);
+    spdlog::info("CppGc: {} ms", gc_time);
+    spdlog::info("CppGc is {}x faster/slower", shared_time / gc_time);
     return 0;
 }
