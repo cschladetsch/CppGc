@@ -2,7 +2,7 @@
 
 void Object::release_ref() {
     if (--ref_count == 0) {
-        GC::remove_object(this); // Now GC is fully defined
+        GC::remove_object(this);  // Ensure it's removed from GC tracking before deletion
         delete this;
     }
 }
@@ -24,8 +24,10 @@ void GC::collect() {
         auto& gen = gc.generations[i];
 
         for (auto it = gen.begin(); it != gen.end();) {
-            if ((*it)->ref_count == 0) {
-                delete *it;
+            Object* obj = *it;
+            
+            // Skip objects that were already deleted
+            if (obj->ref_count == 0) {
                 it = gen.erase(it);
             } else {
                 ++it;
