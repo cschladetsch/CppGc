@@ -35,6 +35,40 @@ int main() {
 }
 ```
 
+## How CppGc is Better Than `std::shared_ptr`
+`std::shared_ptr` provides **automatic reference counting**, but it lacks **true garbage collection**. **CppGc** improves upon `std::shared_ptr` in these ways:
+
+1. **Avoids Cyclic References**  
+   - `std::shared_ptr` **cannot handle cyclic references** (e.g., `A → B → A` causes a memory leak).  
+   - **CppGc** allows garbage collection of objects with cycles since it periodically scans objects with `ref_count == 0` and removes them.
+
+2. **Generational Garbage Collection**  
+   - `std::shared_ptr` **immediately deletes objects when `use_count == 0`**, causing unpredictable performance spikes.  
+   - **CppGc** delays deallocation using **three generations** (Young → Middle → Old), reducing fragmentation and improving performance.
+
+3. **Explicit Garbage Collection Control**  
+   - With `std::shared_ptr`, deletion happens implicitly.  
+   - **CppGc** lets you control when garbage collection runs (`GC::collect()`), making it more predictable in performance-sensitive applications.
+
+4. **Lower Overhead for Small Objects**  
+   - `std::shared_ptr` requires **atomic operations** (`use_count` updates are thread-safe but slow).  
+   - **CppGc** can be optimized to avoid unnecessary atomic ops by **batch-processing** garbage collection.
+
+5. **Supports Primitive Types**  
+   - `std::shared_ptr<int>` is unnecessary overhead for primitive types.  
+   - **CppGc** provides a lightweight wrapper (`GCPrimitive<int>`), avoiding heap allocation overhead for simple types.
+
+### **When to Use `std::shared_ptr` vs. CppGc**
+- Use **`std::shared_ptr`** when:
+  - Objects **never form cycles**.
+  - You want **thread-safe reference counting**.
+  - You don’t need explicit control over garbage collection.
+
+- Use **CppGc** when:
+  - Objects **form cyclic dependencies**.
+  - You need **better performance with generational GC**.
+  - You want **predictable, manual garbage collection control**.
+
 ## Build & Run
 ```sh
 mkdir build && cd build
